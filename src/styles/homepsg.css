@@ -1,0 +1,123 @@
+.navbarpsg{
+    background-color: black;
+    padding: 10px;
+  }
+
+.bodyhome{
+    background-color: #619cdb;
+}
+  
+.nav-items {
+    list-style-type: none;
+    margin:0;
+    padding: 0;
+  }
+  
+.nav-item {
+    display: inline-block;
+    margin-right: 20px;
+    padding-right: 5%;
+  }
+  
+.nav-item a {
+    text-decoration: none;
+    color: white;
+    font-family: 'Fontfabric', sans-serif;
+  }
+  
+.nav-item a:hover {
+    color: blue;
+  }
+
+.guidefont{
+    text-align: center;
+  }
+
+.cardContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; 
+}
+  
+.card {
+    width: auto; 
+    height: auto; 
+    border: 1px solid black;
+    padding: 20px;
+    text-align: center;
+  }
+  
+.buildimage {
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+.image-container {
+    position: relative;
+    display: inline-block;
+}
+
+.cardImage {
+    max-width: 100%;
+    height: auto;
+}
+
+.image-button {
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    opacity: 50%;
+}
+
+.image-button:hover {
+    background-color: #0056b3;
+}
+
+
+
+.slide-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: blue;
+    font-size: 24px;
+    z-index: 1;
+    cursor: pointer;
+}
+
+.slide-button.left {
+    left: 10px;
+}
+
+.slide-button.right {
+    right: 10px;
+}
+
+.info-container {
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.cardImage {
+    max-width: 100%;
+    height: auto;
+    position: relative;
+}
+
+.image-container {
+    position: relative;
+}
+
+  
