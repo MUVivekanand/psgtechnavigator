@@ -6,6 +6,10 @@
     border-radius: 5px;
     background-color: #f9f9f9;
   }
+
+  .facultybody{
+    background-color: rgb(114, 114, 199);
+  }
   
   .form-group {
     margin-bottom: 20px;

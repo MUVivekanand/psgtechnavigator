@@ -1,66 +1,65 @@
 import React, { useState } from 'react';
 import './styles/feedback.css';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios'; // Import Axios
 
 function Feedback() {
     const [selectedOption, setSelectedOption] = useState('');
     const [rating, setRating] = useState('');
-    const [submit2,setSubmit] = useState(false);
+    const [feedback, setFeedback] = useState('');
+    const [submit2, setSubmit] = useState(false);
 
     const handleDropdownChange = (event) => {
         setSelectedOption(event.target.value);
     };
 
-
-
     const handleRatingChange = (event) => {
         setRating(event.target.value);
     };
-    // Add another state variable for feedback
-        const [feedback, setFeedback] = useState('');
 
-        // Handler function to update feedback state
-        const handleFeedbackChange = (event) => {
-            setFeedback(event.target.value);
+    const handleFeedbackChange = (event) => {
+        setFeedback(event.target.value);
+    };
+
+    const handleSubmit = async () => {
+        const data = {
+            location: selectedOption,
+            rating: rating,
+            feedback: feedback,
         };
 
-        // Handler function for form submission
-        const handleSubmit = () => {
-            // Logic to handle form submission (e.g., sending feedback to server)
-            // You can use the selectedOption, rating, and feedback state variables here
-            console.log('Location:', selectedOption);
-            console.log('Rating:', rating);
-            console.log('Feedback:', feedback);
-            setSubmit(true);
-
-            // Reset the form after submission if needed
+        try {
+            const response = await axios.post('http://localhost:4000/api/feedback', data);
+            console.log('Response:', response.data);
             setSelectedOption('');
             setRating('');
             setFeedback('');
-        };
+            setSubmit(true);
+        } catch (error) {
+            console.error('Error submitting feedback:', error);
+        }
+    };
 
-        let navigate = useNavigate();
+    let navigate = useNavigate();
 
-        const Student=() => {
-            navigate("/Student");
-        }
-    
-        const Home=()=>{
-            navigate("/");
-        }
-        
-        const Events=()=>{
-            navigate("/events");
-        }
-    
-        const Faculty=()=>{
-            navigate("/Faculty");
-        }
+    const Student = () => {
+        navigate("/Student");
+    }
 
+    const Home = () => {
+        navigate("/");
+    }
+
+    const Events = () => {
+        navigate("/events");
+    }
+
+    const Faculty = () => {
+        navigate("/Faculty");
+    }
 
     return (
         <div className='feedbackback'>
-
             <nav className="navbarpsg">
                 <ul className="nav-items">
                     <li className="nav-item"><a href="#" onClick={Student}>Find a Faculty</a></li>
@@ -88,15 +87,16 @@ function Feedback() {
                         value={rating}
                         onChange={handleRatingChange}
                         placeholder="Enter rating /5"
-                        min="0" // Set the minimum value to 0
+                        min="0"
                         max="5"
                         id='rating'
                     />
                     <br></br>
                     <input
                         type="text"
+                        value={feedback}
+                        onChange={handleFeedbackChange}
                         placeholder="Enter your feedback"
-                        // You need to define a handler to set the feedback state
                     />
                     <br />
                     <button onClick={handleSubmit}>Submit</button>
@@ -108,4 +108,3 @@ function Feedback() {
 }
 
 export default Feedback;
-

@@ -24,7 +24,13 @@ const facultySchema = new mongoose.Schema({
   schedule: [String],
 });
 
+const feedbackSchema = new mongoose.Schema({
+    location: String,
+    rating: Number,
+    feedback: String
+  });
 
+const Feedback = mongoose.model("Feedback", feedbackSchema);
 
 const Faculty = mongoose.model("Faculty", facultySchema);
 
@@ -85,13 +91,52 @@ app.post("/api/student", async (req, res) => {
 
     const scheduleIndex = convertTimeToIndex(schedule);
 
-    const cabin = faculty.schedule[scheduleIndex];
+    const cabin1 = faculty.schedule[scheduleIndex];
+    const cabin2 = faculty.cabin;
 
-    res.json({ cabin });
+    res.json({ cabin1, cabin2 });
   } catch (err) {
     console.error("Error searching for faculty availability:", err);
     res.status(500).json({ error: "Server error" });
   }
+});
+
+app.post("/api/feedback", async (req, res) => {
+    const { location, rating, feedback } = req.body;
+  
+    if (!location || !rating || !feedback) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+  
+    try {
+      const newFeedback = await Feedback.create({
+        location,
+        rating,
+        feedback
+      });
+  
+      res.json(newFeedback);
+    } catch (err) {
+      console.error("Error creating faculty:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  app.post('/api/rating', async (req, res) => {
+    const { canteen } = req.body;
+
+    try {
+        const foundCanteen = await Feedback.findOne({ location: canteen });
+
+        if (foundCanteen) {
+            res.json({ rating: foundCanteen.rating });
+        } else {
+            res.status(404).json({ error: 'Rating not found for the specified canteen' });
+        }
+    } catch (error) {
+        console.error('Error finding canteen rating:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
 });
 
 app.listen(PORT, () => {

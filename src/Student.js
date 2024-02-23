@@ -30,6 +30,7 @@ const Student = () => {
     schedule: ''
   });
   const [cabin, setCabin] = useState('');
+  const [cabin2, setCabin2] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false); // State variable for submission status
   const [error, setError] = useState('');
 
@@ -48,7 +49,9 @@ const Student = () => {
       const response = await axios.post('http://localhost:4000/api/student', formData);
       console.log(response.data); // Assuming response contains faculty data
       setIsSubmitted(true); // Set submission status to true
-      setCabin(response.data.cabin); // Set cabin from response data
+      const { cabin1, cabin2 } = response.data;
+      setCabin(cabin1);
+      setCabin2(cabin2);
       setError('');
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -128,7 +131,7 @@ const Student = () => {
       {cabin !== 'NIL' ? (
         <p className="student-cabin">Now {formData.facultyName} is at: {cabin}</p>
       ) : (
-        <p className="student-cabin">Not scheduled. He/She must be in the cabin.</p>
+        <p className="student-cabin">Not scheduled. He/She must be in the cabin at {cabin2}</p>
       )}
     </div>
     </div>
