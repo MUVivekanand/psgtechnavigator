@@ -1,0 +1,19 @@
+.eventstext{
+    text-align: center;
+}
+
+.eventscard {
+    background-color: #f0f0f0;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 5px;
+    width: 600px; /* Increase box size */
+    margin: 0 auto; /* Center align */
+    text-align: center;
+    height:70vh; /* Center align text */
+}
+
+.eventbody{
+    background-color: rgb(152, 152, 216);
+    height: 100vh;
+}

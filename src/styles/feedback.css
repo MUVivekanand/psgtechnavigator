@@ -1,0 +1,46 @@
+.feedbacktext{
+    text-align: center;
+}
+
+
+.image-container {
+    position: relative;
+    display: inline-block;
+}
+
+
+.feedcard {
+    background-color: #f0f0f0;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 5px;
+    width: 600px; /* Increase box size */
+    margin: 0 auto; /* Center align */
+    text-align: center;
+    height:70vh; /* Center align text */
+}
+
+
+.feedcardContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center align items */
+}
+
+.feedcardContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center align items */
+}
+
+/* Adjust the width of the feedback input box */
+.feedcardContainer input[type="text"] {
+    width: 500px; /* Set the desired width */
+    padding: 10px; /* Add padding for better appearance */
+    margin-top: 10px; 
+    height: 240px;/* Add margin to separate from other elements */
+}
+
+#rating{
+    width: 200px;
+}
