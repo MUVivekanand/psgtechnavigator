@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './styles/homepsg.css';
 import mainbuild from './images/mainbuilding.jpg';
 import eblock from './images/e-block.png';
 import canteen from './images/f-block_canteen.png';
 import bridge from './images/techbridge.png';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 function Home() {
     const [currentImage, setCurrentImage] = useState(0);
     const [showInfo, setShowInfo] = useState(false);
     const [description, setDescription] = useState('');
+    const [rating, setRating] = useState('');
     const images = [mainbuild, eblock, canteen, bridge]; // Array of images
     const numImages = images.length;
 
     let navigate = useNavigate();
-
-    const ui = localStorage.getItem('rating')
 
     const descriptions = [
         "Main Building: PSG College of Technology is an autonomous, government aided, private engineering college in Coimbatore, India.The PSG College of Technology is situated at about 8 km from Coimbatore Railway Station and 5 km from Airport. The campus is spread over 45 acres of land, economically utilized for the College, Hostels, Staff Quarters, Play Fields and Gardens.",
@@ -24,23 +24,38 @@ function Home() {
         "Tech Bridge: It was constructed for the benefit of students to reach college safely (There were few accidents which lead to life loss). They act as Shelter during Sunny and Rainy Days. It has created many memories for many PSG Tech Students."
     ];
 
-    const Feedback=() => {
+    useEffect(() => {
+        if (showInfo && currentImage === 2) {
+            fetchRating(); // Fetch the rating when the description for canteen is displayed
+        }
+    }, [showInfo, currentImage]);
+
+    const fetchRating = async () => {
+        try {
+            const response = await axios.post('http://localhost:4000/api/rating', { canteen: 'F-Block Canteen' });
+            // Assuming your response contains the rating
+            setRating(response.data.rating);
+        } catch (error) {
+            console.error('Error fetching rating:', error);
+        }
+    };
+    
+
+    const Feedback = () => {
         navigate("/feedback");
     }
-    
-    const Events=()=>{
+
+    const Events = () => {
         navigate("/events");
     }
 
-    const Student=()=>{
+    const Student = () => {
         navigate("/Student");
     }
 
-    const Faculty=()=>{
+    const Faculty = () => {
         navigate("/Faculty");
     }
-
-    
 
     const nextImage = () => {
         let nextIndex;
@@ -94,7 +109,6 @@ function Home() {
     };
 
     return (
-    
         <div className='bodyhome'>
             <nav className="navbarpsg">
                 <ul className="nav-items">
@@ -109,10 +123,10 @@ function Home() {
                 <h1 className='guidefont'>Welcome to PSG Tech Campus Guide</h1>
                 <br />
                 <div className='image-container'>
-
                     <div className="image-slider">
                         <button className="slide-button left" onClick={prevImage}>&lt;</button>
                         <img src={images[currentImage]} alt="Main Building" className="cardImage" />
+                        {showInfo && currentImage === 2 && <p>Rating: {rating}</p>}
                         <button className='image-button' onClick={toggleInfo}>Info</button>
                         <button className="slide-button right" onClick={nextImage}>&gt;</button>
                     </div>

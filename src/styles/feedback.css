@@ -2,6 +2,11 @@
     text-align: center;
 }
 
+.feedbackback{
+    background-color: rgb(140, 140, 222);
+    height:100vh;
+}
+
 
 .image-container {
     position: relative;
