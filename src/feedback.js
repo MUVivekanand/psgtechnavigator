@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 function Feedback() {
     const [selectedOption, setSelectedOption] = useState('');
     const [rating, setRating] = useState('');
+    const [submit2,setSubmit] = useState(false);
 
     const handleDropdownChange = (event) => {
         setSelectedOption(event.target.value);
@@ -30,6 +31,7 @@ function Feedback() {
             console.log('Location:', selectedOption);
             console.log('Rating:', rating);
             console.log('Feedback:', feedback);
+            setSubmit(true);
 
             // Reset the form after submission if needed
             setSelectedOption('');
@@ -98,6 +100,7 @@ function Feedback() {
                     />
                     <br />
                     <button onClick={handleSubmit}>Submit</button>
+                    {submit2 && <p>Submitted successfully</p>}
                 </div>
             </div>
         </div>
