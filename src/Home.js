@@ -5,41 +5,82 @@ import eblock from './images/e-block.png';
 import canteen from './images/f-block_canteen.png';
 import bridge from './images/techbridge.png';
 import { useNavigate } from 'react-router-dom';
+
 import axios from 'axios';
 
 function Home() {
-    const [currentImage, setCurrentImage] = useState(0);
+    const [currentLocation, setCurrentLocation] = useState('Main Building');
     const [showInfo, setShowInfo] = useState(false);
     const [description, setDescription] = useState('');
     const [rating, setRating] = useState('');
-    const images = [mainbuild, eblock, canteen, bridge]; // Array of images
-    const numImages = images.length;
+    const [navigationDirections, setNavigationDirections] = useState([]);
+    const [navigationStarted, setNavigationStarted] = useState(false);
+
+    const [chatInput, setChatInput] = useState('');
+    const [chatResponse, setChatResponse] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [isChatVisible, setIsChatVisible] = useState(false);
+
+    const handleChatSubmit = async () => {
+        if (!chatInput.trim()) return;
+    
+        setIsLoading(true);
+        setChatResponse(''); 
+        try {
+            const response = await axios.post('http://localhost:8502/chat', { query: chatInput });
+            setChatResponse(response.data.response.trim()); 
+        } catch (error) {
+            console.error('Error fetching chatbot response:', error);
+            setChatResponse('Error fetching response. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const toggleChatbot = () => {
+        setIsChatVisible(!isChatVisible);
+    };
+
+
+    const [selectedDestination, setSelectedDestination] = useState('');
+    const locations = ['Main Building', 'E-Block Building', 'Canteen', 'Bridge'];
+    const images = {
+        'Main Building': mainbuild,
+        'E-Block Building': eblock,
+        'Canteen': canteen,
+        'Bridge': bridge
+    };
 
     let navigate = useNavigate();
 
-    const descriptions = [
-        "Main Building: PSG College of Technology is an autonomous, government aided, private engineering college in Coimbatore, India.The PSG College of Technology is situated at about 8 km from Coimbatore Railway Station and 5 km from Airport. The campus is spread over 45 acres of land, economically utilized for the College, Hostels, Staff Quarters, Play Fields and Gardens.",
-        "E-Block: This 4 floored block is the main block of Computer Science and Engineering department, ECE dept. With almost multiple lab facilities like programming lab,grd lab,cc lab,hardware lab,IT lab.",
-        "Canteen: This F-Block Canteen is the main canteen of the campus, with many day scholars getting benefitted.",
-        "Tech Bridge: It was constructed for the benefit of students to reach college safely (There were few accidents which lead to life loss). They act as Shelter during Sunny and Rainy Days. It has created many memories for many PSG Tech Students."
-    ];
+    const graph = {
+        'Main Building': { left: null, right: 'E-Block Building' },
+        'E-Block Building': { left: 'Canteen', right: 'Bridge' },
+        'Canteen': { left: 'Main Building', right: null },
+        'Bridge': { left: 'E-Block Building', right: null }
+    };
+
+    const descriptions = {
+        'Main Building': "Main Building: PSG College of Technology is an autonomous, government aided, private engineering college in Coimbatore, India...",
+        'E-Block Building': "E-Block: This 4 floored block is the main block of Computer Science and Engineering department, ECE dept...",
+        'Canteen': "Canteen: This F-Block Canteen is the main canteen of the campus, with many day scholars getting benefitted...",
+        'Bridge': "Tech Bridge: It was constructed for the benefit of students to reach college safely (There were few accidents which lead to life loss)...",
+    };
 
     useEffect(() => {
-        if (showInfo && currentImage === 2) {
-            fetchRating(); // Fetch the rating when the description for canteen is displayed
+        if (showInfo && currentLocation === 'Canteen') {
+            fetchRating();
         }
-    }, [showInfo, currentImage]);
+    }, [showInfo, currentLocation]);
 
     const fetchRating = async () => {
         try {
             const response = await axios.post('http://localhost:4000/api/rating', { canteen: 'F-Block Canteen' });
-            // Assuming your response contains the rating
             setRating(response.data.rating);
         } catch (error) {
             console.error('Error fetching rating:', error);
         }
     };
-    
 
     const Feedback = () => {
         navigate("/feedback");
@@ -57,59 +98,123 @@ function Home() {
         navigate("/Faculty");
     }
 
-    const nextImage = () => {
-        let nextIndex;
-        switch (currentImage) {
-            case 0:
-                nextIndex = 1; // Move from mainbuild to eblock
-                break;
-            case 1:
-                nextIndex = 3; // Move from eblock to bridge
-                break;
-            case 2:
-                nextIndex = 2; // canteen should not respond
-                break;
-            case 3:
-                nextIndex = 3; // Move from bridge to mainbuild
-                break;
-            default:
-                nextIndex = 0;
-                break;
-        }
-        setCurrentImage(nextIndex);
-        setShowInfo(false); // Hide info box when image changes
+    const navigateLocation = (location) => {
+        setCurrentLocation(location);
+        setShowInfo(false);
     };
 
-    const prevImage = () => {
-        let prevIndex;
-        switch (currentImage) {
-            case 0:
-                prevIndex = 0; // Move from mainbuild to bridge
-                break;
-            case 1:
-                prevIndex = 2; // Move from eblock to canteen
-                break;
-            case 2:
-                prevIndex = 0; // Move from canteen to mainbuild
-                break;
-            case 3:
-                prevIndex = 1; // Move from bridge to eblock
-                break;
-            default:
-                prevIndex = 0;
-                break;
+    useEffect(() => {
+        if (currentLocation === selectedDestination) {
+            setTimeout(() => {
+                alert(`Successfully reached ${selectedDestination}!`);
+            }, 100); // Adjust delay as needed
         }
-        setCurrentImage(prevIndex);
-        setShowInfo(false); // Hide info box when image changes
+    }, [currentLocation, selectedDestination]);
+
+    useEffect(() => {
+        if (currentLocation === selectedDestination) {
+            setTimeout(() => {
+                setCurrentLocation('Main Building'); // Reset to Main Building
+                setNavigationStarted(false); // Reset navigation state
+            }, 100); // Adjust delay as needed
+        }
+    }, [currentLocation, selectedDestination]);
+    
+
+    const handleStartNavigation = () => {
+        let current = currentLocation;
+        let directions = [];
+
+        setNavigationStarted(true);
+    
+        while (current !== selectedDestination) {
+            const { left, right } = graph[current];
+    
+            if (right === selectedDestination) {
+                directions.push(`Turn right from ${current} to reach ${selectedDestination}`);
+                break; // Break the loop once the destination is found
+            } else if (left === selectedDestination) {
+                directions.push(`Turn left from ${current} to reach ${selectedDestination}`);
+                break; // Break the loop once the destination is found
+            } else if (right) {
+                directions.push(`Turn right from ${current} to ${right}`);
+                current = right;
+            } else if (left) {
+                directions.push(`Turn left from ${current} to ${left}`);
+                current = left;
+            }
+        }
+    
+        setNavigationDirections(directions); // Update the state with the directions
+    
+    };
+    
+    
+
+    const navigateLeft = () => {
+        const { left } = graph[currentLocation];
+        if (left) {
+            setCurrentLocation(left);
+            setShowInfo(false);
+        }
+    };
+
+    const navigateRight = () => {
+        const { right } = graph[currentLocation];
+        if (right) {
+            setCurrentLocation(right);
+            setShowInfo(false);
+        }
     };
 
     const toggleInfo = () => {
         setShowInfo(!showInfo);
-        setDescription(descriptions[currentImage]);
+        setDescription(descriptions[currentLocation]);
     };
 
     return (
         <div className='bodyhome'>
+
+            <div className="chatbot-trigger">
+                <button onClick={toggleChatbot}>
+                    {isChatVisible ? 'Close Chatbot' : 'Open Chatbot'}
+                </button>
+            </div>
+
+            {/* Chatbot Container */}
+            {isChatVisible && (
+                <div className="chatbot-container">
+                    <div className="chatbot-header">
+                        <h3>PSG Tech Navigator</h3>
+                        <button onClick={toggleChatbot}>×</button>
+                    </div>
+                    
+                    <div className="chatbot-messages">
+                        {chatResponse && (
+                            <div className="message bot-message">
+                                {chatResponse}
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="chatbot-input-area">
+                        <textarea
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            placeholder="Ask your campus-related query..."
+                            rows={3}
+                            className="chatbot-input"
+                        ></textarea>
+                        <button 
+                            onClick={handleChatSubmit} 
+                            disabled={isLoading}
+                            className="chatbot-submit"
+                        >
+                            {isLoading ? 'Sending...' : 'Send'}
+                        </button>
+                    </div>
+                </div>
+            )}
             <nav className="navbarpsg">
                 <ul className="nav-items">
                     <li className="nav-item"><a href="#" onClick={Student}>Find a Faculty</a></li>
@@ -119,16 +224,46 @@ function Home() {
                 </ul>
             </nav>
 
+
+
             <div className="card">
                 <h1 className='guidefont'>Welcome to PSG Tech Campus Guide</h1>
-                <br />
+
+                <div className='startnav'>
+                    <h2 className='startnav'>Start Navigation</h2>
+                    <select value={currentLocation} onChange={(e) => navigateLocation(e.target.value)}>
+                        {locations.map((location, index) => (
+                            <option key={index} value={location}>{location}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className='toDestination'>
+                    <h2 className='startnav'>To Destination</h2>
+                    <select value={selectedDestination} onChange={(e) => setSelectedDestination(e.target.value)}>
+                        {locations.map((location, index) => (
+                            <option key={index} value={location}>{location}</option>
+                        ))}
+                    </select>
+                    <button onClick={handleStartNavigation} disabled={navigationStarted}>Start Navigation</button>
+                </div>
+
+                <br></br>
+
+                <div className='cardnav'>
+                    {navigationDirections.map((direction, index) => (
+                        <p key={index}>{direction}</p>
+                    ))}
+                </div>
+
+                <br></br>
                 <div className='image-container'>
                     <div className="image-slider">
-                        <button className="slide-button left" onClick={prevImage}>&lt;</button>
-                        <img src={images[currentImage]} alt="Main Building" className="cardImage" />
-                        {showInfo && currentImage === 2 && <p>Rating: {rating}</p>}
+                        <button className="slide-button left" onClick={navigateLeft}>&lt;</button>
+                        <img src={images[currentLocation]} alt={currentLocation} className="cardImage" />
+                        {showInfo && currentLocation === 'Canteen' && <p>Rating: {rating}</p>}
                         <button className='image-button' onClick={toggleInfo}>Info</button>
-                        <button className="slide-button right" onClick={nextImage}>&gt;</button>
+                        <button className="slide-button right" onClick={navigateRight}>&gt;</button>
                     </div>
                     {showInfo && (
                         <div className="info-container">
@@ -142,3 +277,4 @@ function Home() {
 }
 
 export default Home;
+
