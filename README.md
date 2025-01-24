@@ -7,6 +7,12 @@ Similarly to the left of e-block we have canteen and right we get to see the bri
 
 As of now these 4 locations and their descriptions are only given.
 
+## Student queries:
+
+There is a mini chatbot that is getting displayed on the homepage that can answer student's queries:
+e.g: Where is the department of CSE located?
+Ans: E-Block
+
 ## Find a faculty
 
 It helps the students to find whether the faculty is free or where he is currently available to meet.
