@@ -11,10 +11,9 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Azure OpenAI and Langchain setup
-from langchain_openai import AzureChatOpenAI
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
+# Google Gemini setup
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
 
 # Streamlit page configuration
 st.set_page_config(page_title="PSG Tech Navigator", page_icon=":school:")
@@ -34,74 +33,132 @@ else:
     db = client["BlockDetails"]
     collection = db["PSGTechNavigator"]
 
+# Initialize Gemini model
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-azure_key = os.getenv("AZURE_KEY")
-azure_deployment = os.getenv("AZURE_DEPLOYMENT")
-azure_endpoint = os.getenv("AZURE_ENDPOINT")
+if not GEMINI_API_KEY:
+    st.error("Gemini API key is not set in the .env file.")
+else:
+    gemini_model = ChatGoogleGenerativeAI(
+        api_key=GEMINI_API_KEY,
+        model="gemini-2.0-flash",
+        temperature=0
+    )
 
-llm = AzureChatOpenAI(
-    api_key=azure_key,
-    api_version="2023-03-15-preview",
-    temperature=0,
-    max_tokens=None,
-    azure_endpoint=azure_endpoint,
-    azure_deployment=azure_deployment
-)
+script_dir = os.path.dirname(__file__) 
+file_path = os.path.join(script_dir, 'sample.txt')
 
 input = st.text_area("Enter your question here:")
-with io.open("sample.txt","r",encoding="utf-8") as f1:
+with open(file_path, 'r', encoding='utf-8') as f1:
     sample = f1.read()
+
+# Define prompt template for query generation
+query_prompt_template = ChatPromptTemplate.from_messages([
+    ("system", """
+    You are a very intelligent AI assistant who is expert in identifying relevant questions from users
+    and converting them into a NoSQL MongoDB aggregation pipeline query.
     
-prompt = """
-You are a very intelligent AI assistant who is expert in identifying relevant questions from users
-and converting them into a NoSQL MongoDB aggregation pipeline query.
+    Note: You MUST return ONLY a valid JSON MongoDB aggregation pipeline query. 
+    No additional text or explanation is allowed.
+    
+    Schema:
+    1. **_id**: Unique identifier for the buildings.
+    2. **title**: Name of the building.
+    3. **description**: Full description of the building.
+    4. **nooffloors**: Number of floors in the building.
+    5. **connectedto**: Buildings that can be accessed or connected to it.
+    6. **deptavailable**: Array containing departments present in the building.
+    
+    Sample Context:
+    Here are some example questions along with their corresponding MongoDB aggregation queries:
+    
+    {sample}
+    
+    Important considerations:
+    Identify the field name from the query and search the field name in the collection.
+    
+    Note: You have to just return the query nothing else. Don't return any additional text with the query. Please follow this strictly.
+    """),
+    ("human", "{question}")
+])
 
-Note: You MUST return ONLY a valid JSON MongoDB aggregation pipeline query. 
-No additional text or explanation is allowed.
+# Define prompt template for formatting results
+format_prompt_template = ChatPromptTemplate.from_messages([
+    ("system", """
+    You are a helpful assistant for PSG Tech campus. Your task is to take the raw database results 
+    about campus buildings and format them into a natural, conversational response.
+    
+    Present the information clearly as if you are directly answering the user's question.
+    Don't mention that this information comes from a database or query.
+    Don't list technical fields unless they're directly relevant to the user's question.
+    
+    Structure your response in paragraphs with appropriate formatting.
+    """),
+    ("human", """
+    User question: {question}
+    
+    Database results: {results}
+    
+    Please format these results into a natural, helpful response:
+    """)
+])
 
-Schema:
-1. **_id**: Unique identifier for the buildings.
-2. **title**: Name of the building.
-3. **description**: Full description of the building.
-4. **nooffloors**: Number of floors in the building.
-5. **connectedto**: Buildings that can be accessed or connected to it.
-6. **deptavailable**: Array containing departments present in the building.
+# Function to process user query with Gemini
+def process_query(user_query, sample_data):
+    try:
+        formatted_prompt = query_prompt_template.format(
+            question=user_query,
+            sample=sample_data
+        )
+        
+        response = gemini_model.invoke(formatted_prompt)
+        query_text = response.content.strip()
+        
+        # Clean up the response if it has code blocks
+        if "```json" in query_text:
+            query_text = query_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in query_text:
+            query_text = query_text.split("```")[1].split("```")[0].strip()
+            
+        return query_text
+    except Exception as e:
+        return f"Error processing query: {str(e)}"
 
-Sample Context:
-Here are some example questions along with their corresponding MongoDB aggregation queries:
-
-Important considerations:
-Identify the field name from the query and search the field name in the collection.
-
-sample_question: {sample}
-As an expert you must use them whenever required.
-Note: You have to just return the query nothing else. Don't return any additional text with the query. Please follow this strictly.
-input: {question}
-output:
-"""
-
-query_with_prompt = PromptTemplate(
-    template=prompt,
-    input_variables=["question", "sample"]
-)
-
-llmchain = LLMChain(llm=llm, prompt=query_with_prompt, verbose=True)
+# Function to format database results into natural language
+def format_results(user_query, db_results):
+    try:
+        # Convert results to a more readable format if they're not already a string
+        if not isinstance(db_results, str):
+            readable_results = json.dumps(db_results, indent=2)
+        else:
+            readable_results = db_results
+            
+        format_prompt = format_prompt_template.format(
+            question=user_query,
+            results=readable_results
+        )
+        
+        response = gemini_model.invoke(format_prompt)
+        return response.content.strip()
+    except Exception as e:
+        return f"Error formatting results: {str(e)}"
 
 if input:
     button = st.button("Submit")
     if button:
         try:
-            response = llmchain.invoke({
-                "question": input,
-                "sample": sample
-            })
-            query_text = response["text"].strip().replace("```json", "").replace("```", "").strip()
+            query_text = process_query(input, sample)
             
             try:
                 query = json.loads(query_text)
-                results = collection.aggregate(query)
-                response_text = "\n".join([str(result) for result in results])
-                st.write(response_text)  # Send plain text response
+                results = list(collection.aggregate(query))
+                
+                if results:
+                    # Format the results into natural language
+                    formatted_response = format_results(input, results)
+                    st.write(formatted_response)
+                else:
+                    st.write("I couldn't find any information about that in our database. Could you try asking differently?")
             except json.JSONDecodeError:
                 st.error("Invalid JSON response received. Please check the model's output.")
                 st.write(query_text)
@@ -146,19 +203,20 @@ async def chat_endpoint(request: ChatRequest):
     input_query = request.query
     
     try:
-        response = llmchain.invoke({
-            "question": input_query,
-            "sample": sample
-        })
-        query_text = response["text"].strip().replace("```json", "").replace("```", "").strip()
+        query_text = process_query(input_query, sample)
         
         try:
             query = json.loads(query_text)
-            results = collection.aggregate(query)
-            response_text = "\n".join([str(result) for result in results])
-            return {"response": response_text}
+            results = list(collection.aggregate(query))
+            
+            if results:
+                # Format the results into natural language
+                formatted_response = format_results(input_query, results)
+                return {"response": formatted_response}
+            else:
+                return {"response": "I couldn't find any information about that in our database. Could you try asking differently?"}
         except json.JSONDecodeError:
-            return {"response": "Invalid query generated"}
+            return {"response": f"Invalid query generated: {query_text}"}
     except Exception as e:
         return {"response": f"An error occurred: {str(e)}"}
 
